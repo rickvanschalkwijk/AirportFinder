@@ -41,53 +41,15 @@
 
         map.addControl(new mapboxgl.NavigationControl());
 
-        // The 'building' layer in the mapbox-streets vector source contains building-height
-        // data from OpenStreetMap.
-        map.on('load', function () {
-            // Insert the layer beneath any symbol layer.
-            var layers = map.getStyle().layers;
-
-            var labelLayerId;
-            for (var i = 0; i < layers.length; i++) {
-                if (layers[i].type === 'symbol' && layers[i].layout['text-field']) {
-                    labelLayerId = layers[i].id;
-                    break;
-                }
-            }
-
-            map.addLayer({
-                'id': '3d-buildings',
-                'source': 'composite',
-                'source-layer': 'building',
-                'filter': ['==', 'extrude', 'true'],
-                'type': 'fill-extrusion',
-                'minzoom': 15,
-                'paint': {
-                    'fill-extrusion-color': '#aaa',
-
-                    // use an 'interpolate' expression to add a smooth transition effect to the
-                    // buildings as the user zooms in
-                    'fill-extrusion-height': [
-                        "interpolate", ["linear"], ["zoom"],
-                        15, 0,
-                        15.05, ["get", "height"]
-                    ],
-                    'fill-extrusion-base': [
-                        "interpolate", ["linear"], ["zoom"],
-                        15, 0,
-                        15.05, ["get", "min_height"]
-                    ],
-                    'fill-extrusion-opacity': .6
-                }
-            }, labelLayerId);
-        });
-
         map.on('load',
         () => {
             map.addSource("airports",
                 {
                     type: "geojson",
-                    data: "?handler=airports"
+                    data: "?handler=airports",
+                    cluster: true,
+                    clusterRadius: 50,
+                    clusterMaxZoom: 6
                 });
 
             map.addLayer({
@@ -101,6 +63,81 @@
                     'circle-stroke-width': 1,
                     'circle-stroke-color': '#fff'
                 }
+            });
+
+            var layers = map.getStyle().layers;
+            var labelLayerId;
+            for (var i = 0; i < layers.length; i++) {
+                if (layers[i].type === 'symbol' && layers[i].layout['text-field']) {
+                    labelLayerId = layers[i].id;
+                    break;
+                }
+            }
+
+            map.addLayer({
+                id: '3d-buildings',
+                source: 'composite',
+                'source-layer': 'building',
+                filter: ['==', 'extrude', 'true'],
+                type: 'fill-extrusion',
+                minzoom: 15,
+                paint: {
+                    'fill-extrusion-color': '#aaa',
+                    'fill-extrusion-height': [
+                        "interpolate", ["linear"], ["zoom"],
+                        15, 0,
+                        15.05, ["get", "height"]
+                    ],
+                    'fill-extrusion-base': [
+                        "interpolate", ["linear"], ["zoom"],
+                        15, 0,
+                        15.05, ["get", "min_height"]
+                    ],
+                    'fill-extrusion-opacity': .6
+                }
+            }, labelLayerId);
+        
+
+            map.addLayer({
+                id: 'clusters',
+                type: 'circle',
+                source: 'airports',
+                filter: ['has', 'point_count'],
+                paint: {
+                    'circle-color': {
+                        property: 'point_count',
+                        type: 'interval',
+                        stops: [
+                            [0, '#2F4F4F'],
+                            [100, '#253d3d'],
+                            [750, '#111c1c'],
+                        ]
+                    },
+                    'circle-radius':{
+                        property: 'point_count',
+                        type: 'interval',
+                        stops: [
+                            [0, 20],
+                            [100, 30],
+                            [750, 40]
+                        ]
+                    }
+                }
+            });
+
+            map.addLayer({
+                id: 'cluster-count',
+                type: 'symbol',
+                source: 'airports',
+                filter: ['has', 'point_count'],
+                layout: {
+                    'text-field': '{point_count}',
+                    'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+                    'text-size': 12,
+                },
+                paint: {
+                    'text-color': '#FFF',
+                },
             });
         });
     </script>
