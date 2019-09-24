@@ -8,8 +8,9 @@
     <meta charset="utf-8" />
     <title>Airport Finder</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
-
     <link href='https://api.mapbox.com/mapbox-gl-js/v1.2.0/mapbox-gl.css' rel='stylesheet' />
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
     <style>
         body {
             margin: 0;
@@ -26,6 +27,17 @@
 </head>
 <body>
     <div id='map'></div>
+    <div id="info-card" class="absolute pin-t pin-l mt-4 ml-4 rounded shadow-lg bg-white" style="max-width: 400px; display: none;">
+        <div>
+            <span class="absolute pin-t pin-r px-4 py-3">
+                <i id="info-card-close-button" class="fa fa-times" role="button" aria-hidden="true"></i>
+            </span>
+            <img class="" src="https://via.placeholder.com/400x200?text=No+Picture+Found" />
+        </div>
+        <div class="px-6 py-4">
+            <div id="airport-name" class="font-bold text-l">Airport Name goes here</div>
+        </div>
+    </div>
     <script src='https://api.mapbox.com/mapbox-gl-js/v1.2.0/mapbox-gl.js'></script>
     <script>
         mapboxgl.accessToken = '@Model.MapboxApiKey';
@@ -96,7 +108,7 @@
                     'fill-extrusion-opacity': .6
                 }
             }, labelLayerId);
-        
+
 
             map.addLayer({
                 id: 'clusters',
@@ -138,6 +150,26 @@
                 paint: {
                     'text-color': '#FFF',
                 },
+            });
+
+            var popup = new mapboxgl.Popup({
+                closeButton: false,
+                closeOnClick: false
+            });
+
+            map.on('mouseenter', 'airport', function(e) {
+                map.getCanvas().style.curser = 'pointer';
+                popup.setLngLat(e.features[0].geometry.coordinates)
+                    .setHTML(e.features[0].properties.name)
+                    .addTo(map);
+            });
+
+            map.on('mouseleave', 'airport', function() {
+                map.getCanvas().style.curser = '';
+                popup.remove();
+            });
+
+            map.on({
             });
         });
     </script>
